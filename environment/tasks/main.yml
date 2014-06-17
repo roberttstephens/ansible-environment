@@ -1,0 +1,66 @@
+- name: Create home directories
+  file: path=/home/{{ ansible_env.USER }}/{{ item }}
+    state=directory
+    owner={{ ansible_env.USER }}
+  with_items:
+    - src
+    - backups
+    - bin
+    - projects
+    - scripts
+    - tmp
+
+- name: Check out the environment repo.
+  git:
+    repo=https://github.com/roberttstephens/environment.git
+    dest=/home/{{ ansible_env.USER }}/src/environment
+    update=yes
+    force=no
+  ignore_errors: yes
+
+- name: Chown ~/src/environment
+  file:
+    path=/home/{{ ansible_env.USER }}/src/environment
+    owner={{ ansible_env.USER }}
+    recurse=yes
+  ignore_errors: yes
+
+- name: Set symbolic links
+  file:
+    src=/home/{{ ansible_env.USER }}/src/environment/{{ item.src }}
+    dest=/home/{{ ansible_env.USER }}/{{ item.dest }}
+    state=link
+    owner={{ ansible_env.USER }}
+  with_items:
+    - { src: '_aliases', dest: '.aliases'}
+    - { src: '_gitconfig', dest: '.gitconfig'}
+    - { src: '_gitignore', dest: '.gitignore'}
+    - { src: '_gvimrc', dest: '.gvimrc'}
+    - { src: '_vim', dest: '.vim'}
+    - { src: '_vimrc', dest: '.vimrc'}
+    - { src: '_shrc', dest: '.shrc'}
+    - { src: 'shared_bin', dest: 'shared_bin'}
+
+- name: Create the .zshrc file if necessary.
+  copy:
+    src=../files/zshrc dest=/home/{{ ansible_env.USER }}/.zshrc force=no
+
+- name: Source shared shrc file.
+  lineinfile:
+    dest=/home/{{ ansible_env.USER }}/{{ item }}
+    line="if [ -f ~/.shrc ]; then source ~/.shrc; fi"
+  with_items:
+    - .bashrc
+    - .zshrc
+
+- name: Download ctags
+  get_url: url=http://prdownloads.sourceforge.net/ctags/ctags-5.8.tar.gz dest=/home/{{ ansible_env.USER }}/src/ctags-5.8.tar.gz
+  register: download_ctags
+
+- name: Untar ctags
+  command: tar -zxf /home/{{ ansible_env.USER }}/src/ctags-5.8.tar.gz chdir=/home/{{ ansible_env.USER }}/src
+  when: download_ctags.changed
+
+- name: Compile ctags
+  shell: ./configure --prefix=/home/{{ ansible_env.USER }} && make && make install chdir=/home/{{ ansible_env.USER }}/src/ctags-5.8
+  when: download_ctags.changed
