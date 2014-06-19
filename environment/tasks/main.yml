@@ -64,3 +64,8 @@
 - name: Compile ctags
   shell: ./configure --prefix=/home/{{ ansible_env.USER }} && make && make install chdir=/home/{{ ansible_env.USER }}/src/ctags-5.8
   when: download_ctags.changed
+
+- name: copy ssh key
+  authorized_key:
+    key="{{ lookup('file', '/home/tyler/.ssh/id_rsa.pub') }}"=
+    user={{ ansible_env.USER }}
