@@ -1,0 +1,9 @@
+# Set up the prompt
+# Use emacs keybindings even if our EDITOR is set to vi
+bindkey -v
+
+# Keep 1000 lines of history within the shell and save it to ~/.zsh_history:
+HISTSIZE=100000
+SAVEHIST=100000
+HISTFILE=~/.zsh_history
+if [ -f ~/.shrc ]; then source ~/.shrc; fi

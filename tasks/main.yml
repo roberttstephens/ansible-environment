@@ -41,9 +41,15 @@
     - { src: '_shrc', dest: '.shrc'}
     - { src: 'shared_bin', dest: 'shared_bin'}
 
-- name: Create the .zshrc file if necessary.
+- name: Copy the .zshrc file
   copy:
-    src=../files/zshrc dest=/home/{{ my_user }}/.zshrc force=no
+    src=../files/zshrc dest=/home/{{ my_user }}/.zshrc
+    owner={{ my_user }}
+
+
+- name: Create the .zshrc.local file if necessary.
+  copy:
+    src=../files/zshrc.local dest=/home/{{ my_user }}/.zshrc.local force=no
     owner={{ my_user }}
 
 - name: Source shared shrc file.
