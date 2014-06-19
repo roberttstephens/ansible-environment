@@ -1,7 +1,7 @@
 - name: Create home directories
-  file: path=/home/{{ ansible_env.USER }}/{{ item }}
+  file: path=/home/{{ my_user }}/{{ item }}
     state=directory
-    owner={{ ansible_env.USER }}
+    owner={{ my_user }}
   with_items:
     - src
     - backups
@@ -13,24 +13,24 @@
 - name: Check out the environment repo.
   git:
     repo=https://github.com/roberttstephens/environment.git
-    dest=/home/{{ ansible_env.USER }}/src/environment
+    dest=/home/{{ my_user }}/src/environment
     update=yes
     force=no
   ignore_errors: yes
 
 - name: Chown ~/src/environment
   file:
-    path=/home/{{ ansible_env.USER }}/src/environment
-    owner={{ ansible_env.USER }}
+    path=/home/{{ my_user }}/src/environment
+    owner={{ my_user }}
     recurse=yes
   ignore_errors: yes
 
 - name: Set symbolic links
   file:
-    src=/home/{{ ansible_env.USER }}/src/environment/{{ item.src }}
-    dest=/home/{{ ansible_env.USER }}/{{ item.dest }}
+    src=/home/{{ my_user }}/src/environment/{{ item.src }}
+    dest=/home/{{ my_user }}/{{ item.dest }}
     state=link
-    owner={{ ansible_env.USER }}
+    owner={{ my_user }}
   with_items:
     - { src: '_aliases', dest: '.aliases'}
     - { src: '_gitconfig', dest: '.gitconfig'}
@@ -43,29 +43,30 @@
 
 - name: Create the .zshrc file if necessary.
   copy:
-    src=../files/zshrc dest=/home/{{ ansible_env.USER }}/.zshrc force=no
+    src=../files/zshrc dest=/home/{{ my_user }}/.zshrc force=no
+    owner={{ my_user }}
 
 - name: Source shared shrc file.
   lineinfile:
-    dest=/home/{{ ansible_env.USER }}/{{ item }}
+    dest=/home/{{ my_user }}/{{ item }}
     line="if [ -f ~/.shrc ]; then source ~/.shrc; fi"
   with_items:
     - .bashrc
     - .zshrc
 
 - name: Download ctags
-  get_url: url=http://prdownloads.sourceforge.net/ctags/ctags-5.8.tar.gz dest=/home/{{ ansible_env.USER }}/src/ctags-5.8.tar.gz
+  get_url: url=http://prdownloads.sourceforge.net/ctags/ctags-5.8.tar.gz dest=/home/{{ my_user }}/src/ctags-5.8.tar.gz
   register: download_ctags
 
 - name: Untar ctags
-  command: tar -zxf /home/{{ ansible_env.USER }}/src/ctags-5.8.tar.gz chdir=/home/{{ ansible_env.USER }}/src
+  command: tar -zxf /home/{{ my_user }}/src/ctags-5.8.tar.gz chdir=/home/{{ my_user }}/src
   when: download_ctags.changed
 
 - name: Compile ctags
-  shell: ./configure --prefix=/home/{{ ansible_env.USER }} && make && make install chdir=/home/{{ ansible_env.USER }}/src/ctags-5.8
+  shell: ./configure --prefix=/home/{{ my_user }} && make && make install chdir=/home/{{ my_user }}/src/ctags-5.8
   when: download_ctags.changed
 
 - name: copy ssh key
   authorized_key:
     key="{{ lookup('file', '/home/tyler/.ssh/id_rsa.pub') }}"=
-    user={{ ansible_env.USER }}
+    user={{ my_user }}
