@@ -19,6 +19,17 @@
     - rxvt-unicode-256color
     - rxvt-unicode
 
+- name: Check the status of .gitconfig
+  stat:
+    path=/home/{{ my_user }}/src/environment
+  register: p
+
+- name: Checkout gitconfig if necessary.
+  command: git checkout -- _gitconfig
+  args:
+    chdir: /home/{{ my_user }}/src/environment
+  when: p.stat.isdir is defined and p.stat.isdir == true
+
 - name: Check out the environment repo.
   git:
     repo=https://github.com/roberttstephens/environment.git
