@@ -32,6 +32,7 @@
     state=link
     owner={{ my_user }}
   with_items:
+    - { src: '_Xresources', dest: '.Xresources'}
     - { src: '_aliases', dest: '.aliases'}
     - { src: '_gitconfig', dest: '.gitconfig'}
     - { src: '_gitignore', dest: '.gitignore'}
