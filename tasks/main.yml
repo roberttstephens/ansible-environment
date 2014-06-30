@@ -9,6 +9,15 @@
     - projects
     - scripts
     - tmp
+    - .terminfo/r
+
+- name: Copy the terminfo files.
+  copy:
+    src=../files/{{ item }} dest=/home/{{ my_user }}/.terminfo/r/{{ item }}
+    owner={{ my_user }}
+  with_items:
+    - rxvt-unicode-256color
+    - rxvt-unicode
 
 - name: Check out the environment repo.
   git:
