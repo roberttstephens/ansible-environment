@@ -29,6 +29,7 @@
   args:
     chdir: /home/{{ my_user }}/src/environment
   when: p.stat.isdir is defined and p.stat.isdir == true
+  ignore_errors: yes
 
 - name: Check out the environment repo.
   git:
@@ -97,3 +98,25 @@
   authorized_key:
     key="{{ lookup('file', '/home/tyler/.ssh/id_rsa.pub') }}"=
     user={{ my_user }}
+
+- name: Install composer
+  shell: curl -sS https://getcomposer.org/installer | php -- --filename=composer
+  args:
+    chdir: ~/
+    creates: ~/bin/composer
+    chdir: ~/bin
+
+- name: Install php codesniffer.
+  shell: ~/bin/composer global require "squizlabs/php_codesniffer=1.*"
+  args:
+    creates: ~/.composer/vendor/bin/phpcs
+
+- name: Install drush.
+  shell: ~/bin/composer global require drush/drush:6.*
+  args:
+    creates: ~/.composer/vendor/bin/drush
+
+- name: Install coder.
+  shell: ~/bin/composer global require drupal/coder:\>7
+  args:
+    creates: ~/.composer/vendor/drupal/coder
