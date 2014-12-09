@@ -1,5 +1,5 @@
 - name: Create home directories
-  file: path=/home/{{ my_user }}/{{ item }}
+  file: path=~/{{ item }}
     state=directory
     owner={{ my_user }}
   with_items:
@@ -13,7 +13,7 @@
 
 - name: Copy the terminfo files.
   copy:
-    src=../files/{{ item }} dest=/home/{{ my_user }}/.terminfo/r/{{ item }}
+    src=../files/{{ item }} dest=~/.terminfo/r/{{ item }}
     owner={{ my_user }}
   with_items:
     - rxvt-unicode-256color
@@ -21,35 +21,35 @@
 
 - name: Check the status of .gitconfig
   stat:
-    path=/home/{{ my_user }}/src/environment
+    path=~/src/environment
   register: p
 
 - name: Checkout gitconfig if necessary.
   command: git checkout -- _gitconfig
   args:
-    chdir: /home/{{ my_user }}/src/environment
+    chdir: ~/src/environment
   when: p.stat.isdir is defined and p.stat.isdir == true
   ignore_errors: yes
 
 - name: Check out the environment repo.
   git:
     repo=https://github.com/roberttstephens/environment.git
-    dest=/home/{{ my_user }}/src/environment
+    dest=~/src/environment
     update=yes
     force=no
   ignore_errors: yes
 
 - name: Chown ~/src/environment
   file:
-    path=/home/{{ my_user }}/src/environment
+    path=~/src/environment
     owner={{ my_user }}
     recurse=yes
   ignore_errors: yes
 
 - name: Set symbolic links
   file:
-    src=/home/{{ my_user }}/src/environment/{{ item.src }}
-    dest=/home/{{ my_user }}/{{ item.dest }}
+    src=~/src/environment/{{ item.src }}
+    dest=~/{{ item.dest }}
     state=link
     owner={{ my_user }}
   with_items:
@@ -65,33 +65,33 @@
 
 - name: Copy the .zshrc file
   copy:
-    src=../files/zshrc dest=/home/{{ my_user }}/.zshrc
+    src=../files/zshrc dest=~/.zshrc
     owner={{ my_user }}
 
 
 - name: Create the .zshrc.local file if necessary.
   copy:
-    src=../files/zshrc.local dest=/home/{{ my_user }}/.zshrc.local force=no
+    src=../files/zshrc.local dest=~/.zshrc.local force=no
     owner={{ my_user }}
 
 - name: Source shared shrc file.
   lineinfile:
-    dest=/home/{{ my_user }}/{{ item }}
+    dest=~/{{ item }}
     line="if [ -f ~/.shrc ]; then source ~/.shrc; fi"
   with_items:
     - .bashrc
     - .zshrc
 
 - name: Download ctags
-  get_url: url=http://prdownloads.sourceforge.net/ctags/ctags-5.8.tar.gz dest=/home/{{ my_user }}/src/ctags-5.8.tar.gz
+  get_url: url=http://prdownloads.sourceforge.net/ctags/ctags-5.8.tar.gz dest=~/src/ctags-5.8.tar.gz
   register: download_ctags
 
 - name: Untar ctags
-  command: tar -zxf /home/{{ my_user }}/src/ctags-5.8.tar.gz chdir=/home/{{ my_user }}/src
+  command: tar -zxf ~/src/ctags-5.8.tar.gz chdir=~/src
   when: download_ctags.changed
 
 - name: Compile ctags
-  shell: ./configure --prefix=/home/{{ my_user }} && make && make install chdir=/home/{{ my_user }}/src/ctags-5.8
+  shell: ./configure --prefix=/home/{{ my_user }} && make && make install chdir=~/src/ctags-5.8
   when: download_ctags.changed
 
 - name: copy ssh key
