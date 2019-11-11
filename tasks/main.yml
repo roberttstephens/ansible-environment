@@ -1,122 +1,126 @@
-- name: Create home directories
-  file: path=~/{{ item }}
-    state=directory
-    owner={{ my_user }}
-  with_items:
-    - src
-    - backups
-    - bin
-    - projects
-    - scripts
-    - tmp
-    - .terminfo/r
+---
 
-- name: Copy the terminfo files.
-  copy:
-    src=../files/{{ item }} dest=~/.terminfo/r/{{ item }}
-    owner={{ my_user }}
-  with_items:
-    - rxvt-unicode-256color
-    - rxvt-unicode
+- name: Set up environment
+  hosts: all
+  tasks:
+  - name: Create home directories
+    file: path=~/{{ item }}
+      state=directory
+      owner={{ my_user }}
+    with_items:
+      - src
+      - backups
+      - bin
+      - projects
+      - scripts
+      - tmp
+      - .terminfo/r
 
-- name: Check the status of .gitconfig
-  stat:
-    path=~/src/environment
-  register: p
+  - name: Copy the terminfo files.
+    copy:
+      src=../files/{{ item }} dest=~/.terminfo/r/{{ item }}
+      owner={{ my_user }}
+    with_items:
+      - rxvt-unicode-256color
+      - rxvt-unicode
 
-- name: Checkout gitconfig if necessary.
-  command: git checkout -- _gitconfig
-  args:
-    chdir: ~/src/environment
-  when: p.stat.isdir is defined and p.stat.isdir == true
-  ignore_errors: yes
+  - name: Check the status of .gitconfig
+    stat:
+      path=~/src/environment
+    register: p
 
-- name: Check out the environment repo.
-  git:
-    repo=https://github.com/roberttstephens/environment.git
-    dest=~/src/environment
-    update=yes
-    force=no
-  ignore_errors: yes
+  - name: Checkout gitconfig if necessary.
+    command: git checkout -- _gitconfig
+    args:
+      chdir: ~/src/environment
+    when: p.stat.isdir is defined and p.stat.isdir == true
+    ignore_errors: yes
 
-- name: Chown ~/src/environment
-  file:
-    path=~/src/environment
-    owner={{ my_user }}
-    recurse=yes
-  ignore_errors: yes
+  - name: Check out the environment repo.
+    git:
+      repo=https://github.com/roberttstephens/environment.git
+      dest=~/src/environment
+      update=yes
+      force=no
+    ignore_errors: yes
 
-- name: Set symbolic links
-  file:
-    src=~/src/environment/{{ item.src }}
-    dest=~/{{ item.dest }}
-    state=link
-    owner={{ my_user }}
-  with_items:
-    - { src: '_Xresources', dest: '.Xresources'}
-    - { src: '_aliases', dest: '.aliases'}
-    - { src: '_gitconfig', dest: '.gitconfig'}
-    - { src: '_gitignore', dest: '.gitignore'}
-    - { src: '_gvimrc', dest: '.gvimrc'}
-    - { src: '_vim', dest: '.vim'}
-    - { src: '_vimrc', dest: '.vimrc'}
-    - { src: '_shrc', dest: '.shrc'}
-    - { src: 'shared_bin', dest: 'shared_bin'}
+  - name: Chown ~/src/environment
+    file:
+      path=~/src/environment
+      owner={{ my_user }}
+      recurse=yes
+    ignore_errors: yes
 
-- name: Copy the .zshrc file
-  copy:
-    src=../files/zshrc dest=~/.zshrc
-    owner={{ my_user }}
+  - name: Set symbolic links
+    file:
+      src=~/src/environment/{{ item.src }}
+      dest=~/{{ item.dest }}
+      state=link
+      owner={{ my_user }}
+    with_items:
+      - { src: '_Xresources', dest: '.Xresources'}
+      - { src: '_aliases', dest: '.aliases'}
+      - { src: '_gitconfig', dest: '.gitconfig'}
+      - { src: '_gitignore', dest: '.gitignore'}
+      - { src: '_gvimrc', dest: '.gvimrc'}
+      - { src: '_vim', dest: '.vim'}
+      - { src: '_vimrc', dest: '.vimrc'}
+      - { src: '_shrc', dest: '.shrc'}
+      - { src: 'shared_bin', dest: 'shared_bin'}
+
+  - name: Copy the .zshrc file
+    copy:
+      src=../files/zshrc dest=~/.zshrc
+      owner={{ my_user }}
 
 
-- name: Create the .zshrc.local file if necessary.
-  copy:
-    src=../files/zshrc.local dest=~/.zshrc.local force=no
-    owner={{ my_user }}
+  - name: Create the .zshrc.local file if necessary.
+    copy:
+      src=../files/zshrc.local dest=~/.zshrc.local force=no
+      owner={{ my_user }}
 
-- name: Source shared shrc file.
-  lineinfile:
-    dest=~/{{ item }}
-    line="if [ -f ~/.shrc ]; then source ~/.shrc; fi"
-  with_items:
-    - .bashrc
-    - .zshrc
+  - name: Source shared shrc file.
+    lineinfile:
+      dest=~/{{ item }}
+      line="if [ -f ~/.shrc ]; then source ~/.shrc; fi"
+    with_items:
+      - .bashrc
+      - .zshrc
 
-- name: Download ctags
-  get_url: url=http://prdownloads.sourceforge.net/ctags/ctags-5.8.tar.gz dest=~/src/ctags-5.8.tar.gz
-  register: download_ctags
+  - name: Download ctags
+    get_url: url=http://prdownloads.sourceforge.net/ctags/ctags-5.8.tar.gz dest=~/src/ctags-5.8.tar.gz
+    register: download_ctags
 
-- name: Untar ctags
-  command: tar -zxf ~/src/ctags-5.8.tar.gz chdir=~/src
-  when: download_ctags.changed
+  - name: Untar ctags
+    command: tar -zxf ~/src/ctags-5.8.tar.gz chdir=~/src
+    when: download_ctags.changed
 
-- name: Compile ctags
-  shell: ./configure --prefix=/home/{{ my_user }} && make && make install chdir=~/src/ctags-5.8
-  when: download_ctags.changed
+  - name: Compile ctags
+    shell: ./configure --prefix=/home/{{ my_user }} && make && make install chdir=~/src/ctags-5.8
+    when: download_ctags.changed
 
-- name: copy ssh key
-  authorized_key:
-    key="{{ lookup('file', '/home/tyler/.ssh/id_rsa.pub') }}"=
-    user={{ my_user }}
+  - name: copy ssh key
+    authorized_key:
+      key: "{{ lookup('file', '/home/tyler/.ssh/id_rsa.pub') }}"
+      user: tyler
 
-- name: Install composer
-  shell: curl -sS https://getcomposer.org/installer | php -- --filename=composer
-  args:
-    chdir: ~/
-    creates: ~/bin/composer
-    chdir: ~/bin
+  - name: Install composer
+    shell: curl -sS https://getcomposer.org/installer | php -- --filename=composer
+    args:
+      creates: ~/bin/composer
+      chdir: ~/bin
 
-- name: Install php codesniffer.
-  shell: ~/bin/composer global require "squizlabs/php_codesniffer=1.*"
-  args:
-    creates: ~/.composer/vendor/bin/phpcs
+  - name: Install php codesniffer.
+    shell: ~/bin/composer global require "squizlabs/php_codesniffer=1.*"
+    args:
+      creates: ~/.composer/vendor/bin/phpcs
 
-- name: Install drush.
-  shell: ~/bin/composer global require drush/drush:6.*
-  args:
-    creates: ~/.composer/vendor/bin/drush
+  - name: Install drush.
+    shell: ~/bin/composer global require drush/drush:6.*
+    args:
+      creates: ~/.composer/vendor/bin/drush
 
-- name: Install coder.
-  shell: ~/bin/composer global require drupal/coder:\>7
-  args:
-    creates: ~/.composer/vendor/drupal/coder
+  - name: Install coder.
+    shell: ~/bin/composer global require drupal/coder:\>7
+    args:
+      creates: ~/.composer/vendor/drupal/coder
